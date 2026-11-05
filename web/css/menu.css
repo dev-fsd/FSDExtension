@@ -1,0 +1,344 @@
+/*
+ * Panel MENU (WebviewView) — chỉ dùng biến --vscode-* (theo theme sáng / tối / tương phản cao của IDE).
+ * Nền theo theme: panel = sideBar-background; hover / chọn = list-*; popup = menu-background; viền = panel-border;
+ * điểm nhấn = focusBorder / textLink-foreground / charts-*. KHÔNG dùng nền xám cố định hay rgba xám/đen đè lên (làm UI tối đi).
+ * Chữ 13px, khoảng cách theo bậc 4 / 8 / 12, bo góc 4px, dòng danh sách cao 22px như Explorer.
+ * Thứ bậc chữ: thông tin chính (tên menu, mã, sysid, aspx, file đang mở, cảnh báo, số đếm) đậm / tô màu; thông tin phụ mờ.
+ * Icon SVG 2 tông 16px (nền nhạt + nét đậm cùng màu, vẽ trong main.js); nút chỉ icon + tooltip, màu theo chức năng (class i-<màu> → --ic).
+ * Chuyển động chỉ ở thu / mở nhóm (120ms), rê chuột và khung xương; tắt hết khi prefers-reduced-motion.
+ */
+html { height: auto; overflow-y: auto; overflow-x: hidden; scrollbar-width: thin; background: var(--vscode-sideBar-background, transparent); }
+body.menu {
+  height: auto;
+  min-height: 100vh;
+  overflow: visible;
+  padding: 0 0 12px;
+  background: var(--vscode-sideBar-background, transparent);
+  color: var(--vscode-foreground);
+  font: 13px / 22px var(--vscode-font-family);
+}
+body.menu {
+  --bd: var(--vscode-panel-border, rgba(128, 128, 128, 0.35));
+  --link: var(--vscode-textLink-foreground, #3794ff);
+  --accent: var(--vscode-focusBorder, var(--link));
+  /* Nền nhạt theo màu nhấn (không xám): chip mã menu, số đếm, huy hiệu. */
+  --tint: color-mix(in srgb, var(--link) 16%, transparent);
+  --hov: var(--vscode-toolbar-hoverBackground, var(--vscode-list-hoverBackground, rgba(128, 128, 128, 0.2)));
+  --sel: var(--vscode-list-activeSelectionBackground, var(--hov));
+  --warn: var(--vscode-editorWarning-foreground, #cca700);
+  --err: var(--vscode-errorForeground, #f14c4c);
+  /* Bảng màu chức năng, lấy từ theme (có dự phòng khi mở ngoài IDE). */
+  --k-blue: var(--vscode-charts-blue, #3794ff);
+  --k-green: var(--vscode-charts-green, #89d185);
+  --k-orange: var(--vscode-charts-orange, #d18616);
+  --k-red: var(--vscode-charts-red, #f14c4c);
+  --k-purple: var(--vscode-charts-purple, #b180d7);
+  --k-yellow: var(--vscode-charts-yellow, #cca700);
+  --k-cyan: var(--vscode-terminal-ansiCyan, #11a8cd);
+  --k-pink: var(--vscode-terminal-ansiMagenta, #bc3fbc);
+}
+.i-blue, .k-blue { --ic: var(--k-blue); }
+.i-green, .k-green { --ic: var(--k-green); }
+.i-orange, .k-orange { --ic: var(--k-orange); }
+.i-red, .k-red { --ic: var(--k-red); }
+.i-purple, .k-purple { --ic: var(--k-purple); }
+.i-yellow, .k-yellow { --ic: var(--k-yellow); }
+.i-cyan, .k-cyan { --ic: var(--k-cyan); }
+.i-pink, .k-pink { --ic: var(--k-pink); }
+body.menu button, body.menu input { font: inherit; color: inherit; }
+body.menu svg { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.2; stroke-linecap: round; stroke-linejoin: round; display: block; }
+body.menu svg .fill { fill: currentColor; stroke: none; }
+/* Lớp nền nhạt của icon 2 tông. */
+body.menu svg .bg { fill: currentColor; fill-opacity: 0.22; stroke: none; }
+/* Icon của nút / chip lấy màu chức năng. */
+.kbtn svg, .tbtn svg, .cbtn svg, .chip svg { color: var(--ic, currentColor); }
+
+/* Thanh cuộn mảnh theo theme */
+body.menu ::-webkit-scrollbar, html::-webkit-scrollbar { width: 8px; height: 8px; }
+body.menu ::-webkit-scrollbar-thumb, html::-webkit-scrollbar-thumb { border-radius: 4px; }
+
+.grow { flex: 1; min-width: 0; }
+.ell { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dim { color: var(--vscode-descriptionForeground); }
+.small { font-size: 12px; }
+.hidden, [hidden] { display: none !important; }
+
+/* ===== Tiến độ mảnh 2px (như Explorer) ===== */
+.prog { position: relative; height: 2px; margin: 0; overflow: hidden; }
+.prog > i { position: absolute; inset: 0; background: var(--vscode-progressBar-background); transform-origin: left; transform: scaleX(0); }
+.prog.run > i { transition: transform 120ms linear; }
+.prog.indet > i { width: 40%; transform: none; animation: prog-slide 1.4s ease-in-out infinite; }
+@keyframes prog-slide { from { left: -40%; } to { left: 100%; } }
+.scan { padding: 4px 12px 0; color: var(--vscode-descriptionForeground); font-size: 12px; }
+
+/* ===== Hàng 1: FBO | MOBILE | SQL, luôn một dòng, chia đều chiều ngang ===== */
+.util { container-type: inline-size; padding: 8px 12px 4px; }
+.util:not([hidden]) { display: flex; flex-wrap: nowrap; align-items: center; gap: 4px; }
+.kbtn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 4px; flex: 1 1 0; min-width: 0; height: 26px; padding: 0 6px;
+  border: 1px solid color-mix(in srgb, var(--ic) 45%, transparent); border-radius: 4px; cursor: pointer; white-space: nowrap;
+  background: color-mix(in srgb, var(--ic) 8%, transparent); transition: background 120ms;
+}
+.kbtn:hover { background: color-mix(in srgb, var(--ic) 20%, transparent); }
+.kbtn .kt { min-width: 0; overflow: hidden; text-overflow: ellipsis; font-weight: 700; letter-spacing: 0.02em; }
+/* Loại menu đang xem: viền đậm + nền đậm hơn (theo màu của nút, không dùng nền xám). */
+.kbtn.act { border-color: var(--ic); background: color-mix(in srgb, var(--ic) 24%, transparent); }
+/* Hẹp: chỉ còn icon màu (tên chế độ nằm trong tooltip). */
+@container (max-width: 250px) { .util .kt { display: none; } }
+
+/* ===== Nút icon: Công cụ + nút trên thẻ menu — icon 2 tông màu, không chữ ===== */
+.tbtn, .cbtn {
+  display: inline-flex; align-items: center; justify-content: center; flex: none; width: 30px; height: 26px; padding: 0;
+  border: 1px solid transparent; border-radius: 4px; cursor: pointer;
+  background: color-mix(in srgb, var(--ic, var(--vscode-foreground)) 10%, transparent); transition: background 120ms;
+}
+.tbtn:hover, .cbtn:hover { background: color-mix(in srgb, var(--ic, var(--vscode-foreground)) 26%, transparent); border-color: color-mix(in srgb, var(--ic, var(--vscode-foreground)) 50%, transparent); }
+.tbtn:active, .cbtn:active, .kbtn:active { background: var(--sel); }
+.kbtn:focus-visible, .cbtn:focus-visible, .tbtn:focus-visible, .ib:focus-visible, .btn:focus-visible, .tools-h:focus-visible { outline: 1px solid var(--vscode-focusBorder); outline-offset: -1px; }
+.cbtn.more { margin-left: auto; --ic: var(--vscode-descriptionForeground); background: transparent; }
+.cbtn.more svg { color: var(--vscode-foreground); }
+
+/* ===== Khối Công cụ: nút icon tự xuống dòng theo bề rộng panel; thu / mở được (nhớ trạng thái) ===== */
+.tools { border-bottom: 1px solid var(--bd); }
+.tools-in { padding: 0 12px 8px; }
+.tools-h {
+  display: flex; align-items: center; gap: 4px; width: 100%; height: 22px; padding: 0; border: 0; background: transparent; cursor: pointer;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--vscode-descriptionForeground);
+}
+.tools-h:hover { color: var(--vscode-foreground); }
+.tools-h .chev { display: inline-grid; transition: transform 120ms; }
+.tools-h .chev.open { transform: rotate(90deg); }
+.tools-h svg { width: 12px; height: 12px; }
+.tools-grid { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+
+/* ===== Dải tab đang mở ===== */
+.tabs { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; padding: 8px 12px; border-bottom: 1px solid var(--bd); }
+.tabs-h { width: 100%; font-size: 11px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--vscode-descriptionForeground); }
+.tab .ell { min-width: 0; }
+.tab { display: inline-flex; align-items: center; gap: 4px; max-width: 100%; min-width: 0; height: 24px; padding: 0 2px 0 4px; border: 1px solid var(--bd); border-radius: 4px; cursor: pointer; background: transparent; transition: background 120ms; }
+.tab:hover { background: var(--vscode-list-hoverBackground); }
+.tab.on { background: var(--tint); border-color: var(--accent); font-weight: 700; }
+.tab-k { flex: none; font-size: 10px; font-weight: 700; line-height: 16px; min-width: 16px; text-align: center; border-radius: 3px; background: var(--vscode-badge-background); color: var(--vscode-badge-foreground); }
+
+/* ===== Nút biểu tượng nhỏ (ghim, đóng, chevron…) ===== */
+.ib {
+  display: inline-grid; place-items: center; width: 22px; height: 22px; padding: 0; flex: none;
+  border: 0; border-radius: 4px; background: transparent; color: var(--vscode-icon-foreground, var(--vscode-foreground)); cursor: pointer;
+  transition: background 120ms;
+}
+.ib:hover { background: var(--hov); }
+.ib.on { color: var(--k-yellow); }
+.ib.on svg { fill: currentColor; fill-opacity: 0.35; }
+.ib.sm { width: 20px; height: 20px; }
+.ib.sm svg { width: 14px; height: 14px; }
+
+/* ===== Nút chữ (trạng thái rỗng) ===== */
+.btn {
+  display: inline-flex; align-items: center; gap: 4px; height: 26px; padding: 0 12px; border-radius: 4px; cursor: pointer; white-space: nowrap;
+  border: 1px solid var(--bd); background: transparent; color: var(--vscode-foreground);
+  transition: background 120ms;
+}
+.btn:hover { background: var(--hov); }
+.btn.primary { border-color: transparent; background: var(--vscode-button-background); color: var(--vscode-button-foreground); }
+.btn.primary:hover { background: var(--vscode-button-hoverBackground); }
+.btns { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; padding: 4px 12px 8px; }
+
+/* ===== Trạng thái rỗng / lỗi ===== */
+.note { padding: 8px 12px; color: var(--vscode-descriptionForeground); }
+.note b { color: var(--vscode-foreground); }
+.es { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 24px 12px 8px; text-align: center; }
+.es-ic { color: var(--k-blue); opacity: 0.6; margin-bottom: 4px; }
+.es-ic svg { width: 40px; height: 40px; stroke-width: 0.9; }
+.es-t { font-weight: 700; }
+.es-d { max-width: 280px; font-size: 12px; line-height: 18px; color: var(--vscode-descriptionForeground); }
+.errline {
+  display: flex; align-items: center; gap: 8px; margin: 8px 12px; padding: 4px 4px 4px 8px; border-radius: 4px;
+  color: var(--err); background: color-mix(in srgb, var(--err) 10%, transparent);
+  border-left: 2px solid var(--err);
+}
+.errline .msg { flex: 1; min-width: 0; }
+/* Tiêu đề nhóm Ghim / Gần đây / danh sách rỗng */
+.sec {
+  display: flex; align-items: center; gap: 6px; margin-top: 8px; padding: 4px 12px;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--vscode-descriptionForeground);
+  border-bottom: 1px solid var(--bd);
+}
+.sec svg { width: 14px; height: 14px; }
+.sec .sec-x { margin-left: auto; width: 20px; height: 20px; opacity: 0.55; }
+.sec .sec-x svg { width: 14px; height: 14px; }
+.sec:hover .sec-x, .sec .sec-x:focus-visible { opacity: 1; }
+.sec .sec-x:hover { color: var(--err); }
+/* Nút ✕ xóa dòng khỏi Gần đây: chỉ hiện khi rê chuột / focus. */
+.row .rx { opacity: 0; }
+.row:hover .rx, .row:focus-within .rx, .row:focus .rx { opacity: 1; }
+.sec .cnt, .gh .cnt { padding: 0 6px; border-radius: 8px; font-size: 11px; font-weight: 700; line-height: 16px; letter-spacing: 0; background: var(--tint); color: var(--vscode-foreground); }
+
+/* ===== Dòng danh sách ===== */
+.row { display: flex; align-items: center; gap: 8px; min-height: 22px; padding: 0 12px; cursor: pointer; user-select: none; }
+.row:hover { background: var(--vscode-list-hoverBackground); }
+.row:focus { outline: 1px solid var(--vscode-focusBorder); outline-offset: -1px; }
+/* Mã menu: huy hiệu đậm, màu nhấn. */
+.row .id, .c-title .id { flex: none; padding: 0 6px; border-radius: 3px; font-size: 11px; line-height: 16px; font-weight: 700; background: var(--tint); color: var(--link); }
+.row .tag { flex: none; padding: 0 4px; border-radius: 3px; font-size: 10px; line-height: 14px; background: var(--vscode-badge-background); color: var(--vscode-badge-foreground); }
+.row .pinb { opacity: 0; }
+.row:hover .pinb, .row:focus-within .pinb, .row .pinb.on { opacity: 1; }
+
+/* ===== Cây menu ===== */
+.tn { position: relative; padding-left: calc(8px + var(--d, 0) * 16px); }
+.tn::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: calc(8px + var(--d, 0) * 16px); pointer-events: none;
+  background: repeating-linear-gradient(to right, transparent 0 15px, var(--vscode-tree-indentGuidesStroke, color-mix(in srgb, var(--vscode-foreground) 22%, transparent)) 15px 16px) 15px 0 / calc(var(--d, 0) * 16px) 100% no-repeat;
+}
+.tn .chv { flex: none; width: 18px; height: 18px; display: inline-grid; place-items: center; }
+.tn .chv svg { width: 12px; height: 12px; transition: transform 120ms; }
+.tn .chv.open svg { transform: rotate(90deg); }
+.tn.folder { font-weight: 700; }
+.tn.folder .cnt { flex: none; padding: 0 6px; border-radius: 8px; font-size: 11px; font-weight: 700; line-height: 16px; background: var(--tint); }
+.tn .nm { flex: 0 1 auto; }
+.tn .grow.nm { flex: 1; }
+.sr .nm { flex: none; max-width: 60%; font-weight: 700; }
+#tres .row:focus, #tnodes .row:focus { background: var(--vscode-list-focusBackground, var(--vscode-list-hoverBackground)); }
+
+/* ===== Thẻ menu đang chọn: viền theme + vạch nhấn bên trái, nền trong suốt ===== */
+#card:not([hidden]) { padding: 8px 12px; }
+.card { padding: 8px; border: 1px solid var(--bd); border-left: 3px solid var(--accent); border-radius: 4px; background: transparent; }
+.c-title { display: flex; align-items: center; gap: 4px; }
+.c-title .nm { flex: 1; min-width: 0; font-size: 14px; font-weight: 700; color: var(--vscode-foreground); }
+.c-title .id { margin-right: 4px; }
+.c-meta, .c-also { color: var(--vscode-descriptionForeground); font-size: 12px; line-height: 18px; }
+.c-meta { display: block; }
+.c-also a { color: var(--link); cursor: pointer; text-decoration: none; }
+.c-also a:hover { text-decoration: underline; }
+/* Giá trị bấm-là-copy: rê chuột có nền theo theme; vừa copy thì nháy xanh. */
+.cp { cursor: copy; border-radius: 3px; }
+.c-title .nm:hover, .c-meta:hover, .c-title .id:hover { background: var(--vscode-list-hoverBackground); }
+.copied { animation: copied 900ms ease-out; }
+@keyframes copied { from { background: color-mix(in srgb, var(--k-green) 45%, transparent); } to { background: transparent; } }
+.chip.copied { animation: copied-chip 900ms ease-out; }
+@keyframes copied-chip { from { background: color-mix(in srgb, var(--k-green) 55%, transparent); } }
+/* Chip thông tin của menu: sysid, aspx, thư mục nguồn, đường dẫn chương trình. */
+.c-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.chip {
+  display: inline-flex; align-items: center; gap: 4px; min-width: 0; max-width: 100%; height: 20px; padding: 0 6px;
+  border: 1px solid color-mix(in srgb, var(--ic) 35%, transparent); border-radius: 3px; font-size: 11.5px; line-height: 18px; font-weight: 600;
+  background: color-mix(in srgb, var(--ic) 12%, transparent);
+  color: color-mix(in srgb, var(--ic) 65%, var(--vscode-foreground));
+}
+.chip:hover { background: color-mix(in srgb, var(--ic) 26%, transparent); }
+.chip .t { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chip.ico { width: 26px; padding: 0; justify-content: center; }
+.chip svg { width: 14px; height: 14px; }
+/* Hàng nút: icon màu, xếp ngang, tự xuống dòng khi hẹp; ⋯ dồn sang phải. */
+.c-btnwrap { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--bd); }
+.c-btns { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+
+/* Nhãn "Đã copy" nổi cạnh giá trị vừa copy (popup nên dùng nền widget). */
+.toast {
+  position: fixed; z-index: 60; padding: 0 8px; border-radius: 3px; font-size: 11px; line-height: 20px; font-weight: 700; pointer-events: none;
+  background: var(--vscode-editorWidget-background, var(--vscode-menu-background)); color: var(--k-green); border: 1px solid var(--k-green);
+}
+
+/* ===== Ô lọc ===== */
+.flt { display: flex; align-items: center; gap: 4px; padding: 8px 12px; border-bottom: 1px solid var(--bd); }
+.flt input {
+  flex: 1; min-width: 0; height: 24px; padding: 0 8px; outline: none; border-radius: 4px;
+  background: var(--vscode-input-background); color: var(--vscode-input-foreground); border: 1px solid var(--vscode-input-border, var(--bd));
+}
+.flt input:focus { border-color: var(--vscode-focusBorder); }
+.flt input::placeholder { color: var(--vscode-input-placeholderForeground); }
+
+/* ===== Nhóm file ===== */
+.grp { --c: var(--vscode-descriptionForeground); margin-top: 2px; }
+#groups { container-type: inline-size; padding: 4px 0 8px; }
+/* Rất hẹp: bỏ tuổi file để nhường chỗ cho tên (tuổi vẫn nằm trong tooltip). */
+@container (max-width: 260px) { .frow .tm:not(.miss) { display: none; } }
+/* Hẹp hơn nữa: tiêu đề nhóm chỉ còn icon màu + số đếm (tên nhóm trong tooltip). */
+@container (max-width: 200px) { .gh .gn { display: none; } }
+.grp.dir { --c: var(--k-blue); }
+.grp.grid { --c: var(--k-green); }
+.grp.filter { --c: var(--k-yellow); }
+.grp.lookup { --c: var(--k-purple); }
+.grp.report { --c: var(--k-red); }
+.grp.import { --c: var(--k-orange); }
+.grp.store, .grp.table { --c: var(--k-orange); }
+.grp.template { --c: var(--k-cyan); }
+.grp.include { --c: var(--vscode-descriptionForeground); }
+/* Tiêu đề nhóm: chevron xoay · icon màu theo loại · tên (chữ thường, hoa đầu) · badge số lượng màu theo nhóm. */
+.gh {
+  display: flex; align-items: center; gap: 4px; height: 22px; padding: 0 8px; cursor: pointer; user-select: none;
+  font-size: 13px; font-weight: 700;
+}
+.gh:hover { background: var(--vscode-list-hoverBackground); }
+.gh:focus { outline: 1px solid var(--vscode-focusBorder); outline-offset: -1px; }
+.gh .cnt { margin-left: auto; flex: none; min-width: 18px; text-align: center; background: color-mix(in srgb, var(--c) 22%, transparent); }
+.gh .gn { flex: 0 1 auto; min-width: 0; }
+.gh .chev { flex: none; display: inline-grid; width: 12px; transform: rotate(90deg); transition: transform 120ms; color: var(--vscode-descriptionForeground); }
+.grp.collapsed .gh .chev { transform: none; }
+.gh .chev svg { width: 12px; height: 12px; }
+.gh .gic, .fic { flex: none; display: inline-grid; place-items: center; color: var(--c); }
+.gh .gic svg { width: 14px; height: 14px; }
+.fic svg { width: 14px; height: 14px; }
+/* Thu / mở nhóm tức thì: hiệu ứng co giãn chiều cao bắt trình duyệt dàn lại cả danh sách (hàng trăm dòng Bảng / Store) mỗi khung hình. */
+.grp.collapsed .gb { display: none; }
+/* Con thụt vào dưới chevron, kèm đường dẫn thụt (indent guide) bên trái như cây của VS Code. */
+.gl { position: relative; margin-left: 13px; }
+.gl::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 1px; background: var(--vscode-tree-indentGuidesStroke, color-mix(in srgb, var(--vscode-foreground) 16%, transparent)); pointer-events: none; }
+.grp:hover > .gb > .gl::before { background: var(--vscode-tree-activeIndentGuidesStroke, color-mix(in srgb, var(--vscode-foreground) 30%, transparent)); }
+.grp .gl .row { position: relative; gap: 6px; height: 22px; min-height: 22px; padding: 0 8px 0 8px; }
+
+/* File đang mở: tên đậm + nền nhạt theo màu nhóm + vạch màu trái. Cảnh báo .f cũ: tên màu cảnh báo; thiếu file: màu lỗi, gạch ngang. */
+.frow.open { background: color-mix(in srgb, var(--c) 14%, transparent); box-shadow: inset 2px 0 0 var(--c); }
+.frow.open .nm { font-weight: 700; }
+.frow.stale .nm { color: color-mix(in srgb, var(--warn) 75%, var(--vscode-foreground)); }
+.frow .tm { flex: none; color: var(--vscode-descriptionForeground); font-size: 11px; opacity: 0.85; }
+.frow .warn { flex: none; display: inline-grid; color: var(--warn); }
+.frow .warn svg { width: 13px; height: 13px; }
+.frow.missing { cursor: default; }
+.frow.missing .nm { color: var(--err); font-weight: 700; text-decoration: line-through; text-decoration-color: color-mix(in srgb, var(--err) 50%, transparent); }
+.frow.missing .fic { color: var(--err); }
+.frow.missing .tm { display: inline-flex; align-items: center; gap: 4px; color: var(--err); font-weight: 700; opacity: 1; }
+.frow.missing .tm svg { width: 12px; height: 12px; }
+/* Đuôi file cuối dòng: chip nhỏ. */
+.ft {
+  flex: none; min-width: 26px; text-align: center; padding: 0 4px; border-radius: 3px; font-size: 9px; font-weight: 700; line-height: 14px; letter-spacing: 0.02em;
+  color: color-mix(in srgb, var(--ftc, var(--vscode-descriptionForeground)) 70%, var(--vscode-foreground)); background: color-mix(in srgb, var(--ftc, var(--vscode-descriptionForeground)) 16%, transparent);
+}
+.ft.xml { --ftc: var(--k-blue); }
+.ft.f { --ftc: var(--k-yellow); }
+.ft.ent { --ftc: var(--k-purple); }
+.ft.txt, .ft.xlsx { --ftc: var(--k-green); }
+.ft.rpt, .ft.frx, .ft.rldc { --ftc: var(--k-red); }
+
+/* Store / Bảng: nút hành động đè lên cuối dòng, chỉ hiện khi rê chuột / focus (không chiếm chỗ của tên). */
+.leaf .acts { position: absolute; right: 2px; top: 0; bottom: 0; display: none; align-items: center; gap: 2px; padding-left: 4px; background: var(--vscode-list-hoverBackground); }
+.leaf:hover .acts, .leaf:focus-within .acts, .leaf:focus .acts { display: inline-flex; }
+
+/* ===== Khung xương (shimmer) khi đang đọc file của menu ===== */
+.skel { padding: 12px; display: grid; gap: 8px; }
+.skel i {
+  display: block; height: 14px; border-radius: 4px; width: 100%;
+  background: linear-gradient(90deg, var(--tint) 25%, color-mix(in srgb, var(--link) 30%, transparent) 50%, var(--tint) 75%) 0 0 / 200% 100%;
+  animation: skel 1.4s linear infinite;
+}
+.skel i:nth-child(1) { height: 22px; width: 45%; }
+.skel i:nth-child(3) { width: 80%; }
+.skel i:nth-child(4) { width: 65%; }
+.skel i:nth-child(5) { height: 22px; width: 45%; margin-top: 8px; }
+.skel i:nth-child(6) { width: 70%; }
+@keyframes skel { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+
+/* ===== Menu chuột phải / ⋯ (popup: nền menu của theme) ===== */
+.pop {
+  position: fixed; z-index: 50; min-width: 200px; max-width: calc(100vw - 8px); padding: 4px 0; border-radius: 4px;
+  background: var(--vscode-menu-background, var(--vscode-dropdown-background)); color: var(--vscode-menu-foreground, var(--vscode-foreground));
+  border: 1px solid var(--vscode-menu-border, var(--vscode-panel-border)); box-shadow: 0 2px 8px var(--vscode-widget-shadow, rgba(0, 0, 0, 0.3));
+}
+.pop .it { display: flex; align-items: center; gap: 8px; height: 22px; padding: 0 12px; cursor: pointer; white-space: nowrap; }
+.pop .it .k { margin-left: auto; padding-left: 16px; color: var(--vscode-descriptionForeground); font-size: 11px; }
+.pop .it:hover, .pop .it.act { background: var(--vscode-menu-selectionBackground, var(--vscode-list-hoverBackground)); color: var(--vscode-menu-selectionForeground, inherit); }
+.pop .sep { height: 1px; margin: 4px 0; background: var(--vscode-menu-separatorBackground, var(--vscode-panel-border)); }
+.pop .cap { height: 20px; padding: 0 12px; font-size: 11px; line-height: 20px; text-transform: uppercase; color: var(--vscode-descriptionForeground); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; }
+}

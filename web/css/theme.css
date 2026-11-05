@@ -1,0 +1,84 @@
+/*
+ * Ánh xạ biến màu của FSD Studio 5.2 (--bg, --fg, --accent…) sang biến --vscode-* của IDE.
+ * VS Code / Cursor tự đổi giá trị --vscode-* khi người dùng đổi theme (sáng / tối / tương phản cao), nên giao diện chạy theo,
+ * không cần class data-theme như 5.2. Giá trị sau dấu phẩy là dự phòng khi mở ngoài IDE (xem thử bố cục).
+ *
+ * Nền: không dùng xám cố định / rgba xám-đen. Nền chính = nền editor; thanh công cụ, đầu cột, dòng sọc = nền editor pha một ít màu nhấn
+ * của theme (--tint = focusBorder) nên theo sắc của theme thay vì xám. Đường kẻ / chữ phụ pha từ màu chữ của theme.
+ * Tên token giữ ổn định: màn Update / Search, panel MENU dùng chung.
+ */
+:root {
+  --tint: var(--vscode-focusBorder, #007fd4);
+  --bg: var(--vscode-editor-background, #ffffff);
+  --fg: var(--vscode-foreground, #1f2421);
+  --side: var(--vscode-sideBar-background, var(--vscode-editor-background, #ffffff));
+  /* Khung / thanh công cụ / thanh tab kết quả. */
+  --panel: color-mix(in srgb, var(--tint) 5%, var(--vscode-editor-background, #ffffff));
+  --code: var(--vscode-editor-background, #ffffff);
+  --input: var(--vscode-input-background, var(--vscode-editor-background, #ffffff));
+  --muted: var(--vscode-descriptionForeground, color-mix(in srgb, var(--fg) 65%, var(--bg)));
+  --faint: var(--vscode-disabledForeground, color-mix(in srgb, var(--fg) 45%, var(--bg)));
+  --line: var(--vscode-panel-border, var(--vscode-editorWidget-border, color-mix(in srgb, var(--fg) 20%, transparent)));
+  --line-ctl: var(--vscode-input-border, var(--vscode-dropdown-border, var(--vscode-panel-border, color-mix(in srgb, var(--fg) 28%, transparent))));
+  --hover: var(--vscode-list-hoverBackground, color-mix(in srgb, var(--tint) 12%, transparent));
+  --sel: var(--vscode-list-activeSelectionBackground, #0060c0);
+  --sel-fg: var(--vscode-list-activeSelectionForeground, #ffffff);
+  --sel-dim: var(--vscode-list-inactiveSelectionBackground, color-mix(in srgb, var(--tint) 18%, transparent));
+  --accent: var(--vscode-button-background, #2e8256);
+  --accent-fg: var(--vscode-button-foreground, #ffffff);
+  --focus: var(--vscode-focusBorder, #007fd4);
+  --link: var(--vscode-textLink-foreground, #006ab1);
+  --bad: var(--vscode-errorForeground, #c62828);
+  --danger: var(--vscode-errorForeground, #c62828);
+  --warn: var(--vscode-editorWarning-foreground, #a46a00);
+  --warn-bg: var(--vscode-inputValidation-warningBackground, color-mix(in srgb, var(--warn) 16%, var(--bg)));
+  --ok: var(--vscode-charts-green, #1a7f37);
+  --prod: var(--vscode-statusBarItem-errorBackground, #c62828);
+  --new: var(--vscode-charts-green, #2e8256);
+  --new-bg: color-mix(in srgb, var(--vscode-charts-green, #2e8256) 18%, transparent);
+  --shadow: 0 8px 28px var(--vscode-widget-shadow, rgba(0, 0, 0, .3));
+  /* Màu loại (icon, nhãn) lấy từ bảng màu biểu đồ của theme. */
+  --c-v: var(--vscode-charts-blue, #2f7fc1);
+  --c-d: var(--vscode-charts-green, #2b8a57);
+  --c-r: var(--vscode-charts-orange, #c2571c);
+  --c-xml: var(--vscode-charts-orange, #d9772f);
+  --c-sql: var(--vscode-charts-purple, #7b5cc4);
+  --c-tbl: var(--vscode-charts-blue, #16867f);
+  --c-ent: var(--vscode-descriptionForeground, #6b7570);
+  --c-xls: var(--vscode-charts-green, #1d7044);
+  --c-js: var(--vscode-charts-yellow, #a37f00);
+  /* Màu icon nhiều màu (ui/icons.js cicon): mỗi chức năng một màu — chạy xanh lá, dừng đỏ, lưu xanh dương, mở vàng, script tím, update cam, DB xanh dương. */
+  --ic-green: var(--vscode-charts-green, #388a34);
+  --ic-red: var(--vscode-charts-red, #e51400);
+  --ic-blue: var(--vscode-charts-blue, #1a85ff);
+  --ic-yellow: var(--vscode-charts-yellow, #bf8803);
+  --ic-orange: var(--vscode-charts-orange, #d18616);
+  --ic-purple: var(--vscode-charts-purple, #652d90);
+  --ic-cyan: var(--vscode-terminal-ansiCyan, #11a8cd);
+  --ic-pink: var(--vscode-terminal-ansiMagenta, #bc3fbc);
+  /* Màu bề mặt của màn Query / Select Table (đầu cột, dòng sọc, thanh trạng thái, tab kết quả): pha từ nền editor + màu nhấn của theme. */
+  --head-bg: color-mix(in srgb, var(--tint) 9%, var(--vscode-editor-background, #ffffff));
+  --stripe: color-mix(in srgb, var(--tint) 4%, var(--vscode-editor-background, #ffffff));
+  --grid-line: color-mix(in srgb, var(--vscode-foreground, #1f2421) 11%, transparent);
+  --cell-sel: var(--vscode-editor-selectionBackground, var(--vscode-list-inactiveSelectionBackground, color-mix(in srgb, var(--tint) 28%, transparent)));
+  --tab-fg: var(--vscode-panelTitle-inactiveForeground, var(--vscode-descriptionForeground, #5c645f));
+  --tab-fg-on: var(--vscode-panelTitle-activeForeground, var(--vscode-foreground, #1f2421));
+  --tab-line: var(--vscode-panelTitle-activeBorder, var(--vscode-focusBorder, #007fd4));
+  --prod-bg: color-mix(in srgb, var(--vscode-errorForeground, #c62828) 13%, transparent);
+  --prod-line: color-mix(in srgb, var(--vscode-errorForeground, #c62828) 55%, transparent);
+  --scrim: color-mix(in srgb, var(--vscode-editor-background, #ffffff) 55%, transparent);
+  --dur: 120ms;
+  --font: var(--vscode-font-family, "Segoe UI", system-ui, sans-serif);
+  --font-size: var(--vscode-font-size, 13px);
+  --mono: var(--vscode-editor-font-family, Consolas, "Cascadia Mono", monospace);
+}
+
+/* Tương phản cao: nền phẳng (không pha màu nhấn), viền đậm theo contrastBorder. */
+:root:has(body.vscode-high-contrast, body.vscode-high-contrast-light) {
+  --panel: var(--vscode-editor-background, #000000);
+  --head-bg: var(--vscode-editor-background, #000000);
+  --stripe: var(--vscode-editor-background, #000000);
+  --line: var(--vscode-contrastBorder, var(--vscode-panel-border, #6fc3df));
+  --grid-line: var(--vscode-contrastBorder, var(--vscode-panel-border, #6fc3df));
+  --hover: var(--vscode-list-hoverBackground, transparent);
+}

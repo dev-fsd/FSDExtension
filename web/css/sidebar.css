@@ -1,0 +1,107 @@
+/*
+ * View "Cây màn" (fsd.screenTree) ở sidebar trái, cùng khu với cây menu hệ thống — chỉ dùng biến --vscode-* (theo theme sáng / tối / tương phản cao của IDE).
+ * Nền gốc là sideBar-background (trong suốt, để IDE tô); vùng tách nhau bằng đường kẻ panel-border và nền tiêu đề sideBarSectionHeader, không xám cứng.
+ * Dòng cây cao 22px, indent 14px, chevron SVG xoay 90° và đường dẫn thụt như cây menu (menu.css); icon nhiều màu theo --vscode-charts-*.
+ * Thông tin chính đậm (tên file / đối tượng, số lượng), phụ mờ (điều kiện, ngày sửa). Class cây dùng chung với tab Update (ut-*, ux-*) nên đặt dưới body.sb.
+ */
+html { height: 100%; overflow: hidden; }
+body.sb {
+  height: 100%; margin: 0; overflow: hidden;
+  background: var(--vscode-sideBar-background, transparent); color: var(--vscode-sideBar-foreground, var(--vscode-foreground));
+  font: 13px / 22px var(--vscode-font-family);
+  --bd: var(--vscode-panel-border, var(--vscode-sideBarSectionHeader-border, rgba(128, 128, 128, .35)));
+  --hov: var(--vscode-list-hoverBackground);
+  --chip: color-mix(in srgb, var(--vscode-foreground) 10%, transparent);
+  --guide: color-mix(in srgb, var(--vscode-foreground) 22%, transparent);
+}
+body.sb #app { display: flex; flex-direction: column; height: 100vh; min-width: 0; }
+body.sb [hidden] { display: none !important; }
+body.sb button, body.sb input, body.sb select { font: inherit; }
+body.sb .sp { flex: 1; }
+body.sb .ic { vertical-align: middle; }
+
+/* ===== Đầu view: nút chuyển nhanh Update | Tìm file + dự án ===== */
+.sb-head { display: flex; align-items: center; gap: 4px; padding: 6px 8px; flex: none; border-bottom: 1px solid var(--bd); background: var(--vscode-sideBarSectionHeader-background, transparent); }
+.sb-head { container-type: inline-size; }
+/* Hẹp: nút chuyển nhanh không đang chọn chỉ còn icon (tooltip giữ nhãn đầy đủ), nhường chỗ cho dự án và nút mở tab. */
+@container (max-width: 330px) { .sb-seg:has(.on) button:not(.on) > span { display: none; } }
+.sb-seg { display: inline-flex; gap: 2px; padding: 2px; border-radius: 6px; border: 1px solid var(--bd); min-width: 0; }
+.sb-seg button { display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 8px; border: 0; border-radius: 4px; background: transparent; color: var(--vscode-descriptionForeground); cursor: pointer; white-space: nowrap; transition: background var(--dur, 120ms); }
+.sb-seg button:hover { background: var(--hov); color: var(--vscode-foreground); }
+.sb-seg button.on { background: color-mix(in srgb, var(--vscode-focusBorder, #007fd4) 24%, transparent); color: var(--vscode-foreground); font-weight: 600; }
+.sb-seg .n { font-style: normal; font-size: 10px; font-weight: 700; line-height: 15px; min-width: 15px; padding: 0 4px; border-radius: 8px; text-align: center; background: var(--vscode-badge-background); color: var(--vscode-badge-foreground); }
+.sb-proj { display: inline-flex; align-items: center; gap: 4px; min-width: 0; max-width: 40%; overflow: hidden; white-space: nowrap; color: var(--vscode-descriptionForeground); }
+.sb-proj b { color: var(--vscode-foreground); overflow: hidden; text-overflow: ellipsis; }
+
+/* ===== Khung chứa ===== */
+.sb-body { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.sb-pane { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow-y: auto; overflow-x: hidden; scrollbar-width: thin; }
+
+/* Dòng menu đang theo (menu mở kèm tab) */
+.sb-ctx { display: flex; align-items: center; gap: 6px; flex: none; padding: 3px 8px; border-bottom: 1px solid var(--bd); background: color-mix(in srgb, var(--vscode-charts-orange, #d18616) 10%, transparent); }
+.sb-ctx b { font-weight: 700; flex: none; }
+.sb-ctx .t { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--vscode-descriptionForeground); }
+
+/* ===== Vùng thu / mở (ux-*) — ghi đè kiểu của tab ===== */
+.sb-pane > .ux { flex: 1 1 200px; min-height: 150px; border-bottom: 1px solid var(--bd); background: transparent; }
+.sb-pane > .ux.grow { flex: 1.5 1 260px; min-height: 190px; }
+.sb-pane > .ux.info { flex: 0 1 130px; min-height: 80px; }
+.sb-pane > .ux.closed { flex: none; min-height: 0; }
+.sb .ux-h { height: 24px; padding: 0 6px 0 4px; gap: 4px; background: var(--vscode-sideBarSectionHeader-background, transparent); border-bottom: 0; color: var(--vscode-sideBarSectionHeader-foreground, var(--vscode-foreground)); font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+.sb .ux-h:hover { background: var(--hov); }
+.sb .ux-h { overflow: hidden; }
+.sb .ux-h b { font-weight: 700; flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.sb .ux-h .cnt { flex: none; white-space: nowrap; }
+.sb .ux-tg { width: 14px; display: inline-grid; place-items: center; color: var(--vscode-descriptionForeground); }
+.sb .ux-tg svg { transition: transform 120ms; }
+.sb .ux:not(.closed) > .ux-h .ux-tg svg { transform: rotate(90deg); }
+.sb .ux-h .cnt { margin-left: 4px; padding: 0 6px; border-radius: 8px; font-size: 11px; font-weight: 700; letter-spacing: 0; text-transform: none; line-height: 16px; color: var(--vscode-charts-blue, #3794ff); background: color-mix(in srgb, var(--vscode-charts-blue, #3794ff) 14%, transparent); }
+.sb .ux-h .cnt:empty { display: none; }
+.sb .ux-s { padding: 4px 8px 0; gap: 2px; }
+.sb .ux-s > input, .sb .ux-s > select { height: 24px; min-width: 0; }
+.sb .ux-t { padding: 4px 8px 0; gap: 3px; }
+.sb .ux-t button { height: 20px; padding: 0 8px; font-size: 11px; border-radius: 10px; border-color: var(--vscode-input-border, var(--bd)); background: transparent; color: var(--vscode-foreground); }
+.sb .ux-t button:hover { background: var(--hov); }
+.sb .ux-t button.on { background: var(--vscode-button-background); border-color: var(--vscode-button-background); color: var(--vscode-button-foreground); }
+.sb .ux-t .sep { background: var(--bd); }
+
+/* Nút icon: 22px, nhuộm màu icon; "thêm vào Update" là nút nhấn duy nhất của vùng */
+.sb .icon-btn { min-width: 22px; height: 22px; padding: 0 3px; border-radius: 4px; color: var(--vscode-icon-foreground, var(--vscode-foreground)); }
+.sb .icon-btn:hover { background: var(--vscode-toolbar-hoverBackground, var(--hov)); }
+.sb .icon-btn.on { background: color-mix(in srgb, var(--vscode-focusBorder, #007fd4) 24%, transparent); }
+.sb .icon-btn.add { background: var(--vscode-button-background); color: var(--vscode-button-foreground); margin-left: 2px; }
+.sb .icon-btn.add:hover { background: var(--vscode-button-hoverBackground, var(--vscode-button-background)); }
+.sb .icon-btn[disabled] { opacity: .4; pointer-events: none; }
+.sb .icon-btn .ic { display: block; }
+.sb .icon-btn.on .ic { filter: none; }
+/* Nút = / ≈ / * (đúng tên – gần đúng): chữ in đậm cho thấy trạng thái */
+.sb [data-a="fileExact"], .sb [data-a="sqlExact"] { font-weight: 700; font-family: var(--vscode-editor-font-family, monospace); }
+
+/* ===== Cây ===== */
+.sb .ut { flex: 1; min-height: 40px; margin: 4px 0 0; padding: 0; border: 0; border-radius: 0; background: transparent; outline: none; font-size: 13px; overflow: auto; scrollbar-width: thin; }
+/* Dòng cây, chevron, icon, số lượng: dùng chung với tab (update-script.css); ở đây chỉ chỉnh cho sidebar (không khung viền, chọn theo màu danh sách của IDE). */
+.sb .ut-n.cur { background: var(--vscode-list-inactiveSelectionBackground, var(--hov)); }
+.sb .ut:focus .ut-n.cur { background: var(--vscode-list-activeSelectionBackground); color: var(--vscode-list-activeSelectionForeground); }
+.sb .ut-n.grp > .ut-l { font-weight: 600; }
+.sb .ut-n.db-app > .ut-l { color: var(--vscode-charts-blue, #3794ff); }
+.sb .ut-n.db-sys > .ut-l { color: var(--vscode-charts-orange, #d18616); }
+.sb .ut:focus-visible { outline: 1px solid var(--vscode-focusBorder); outline-offset: -1px; }
+
+/* Kết quả Check Voucher */
+.sb-info { flex: 1; min-height: 0; overflow: auto; padding: 4px 8px; font-size: 12px; line-height: 18px; }
+.ms-a { color: var(--vscode-textLink-foreground); }
+.ms-e { color: var(--vscode-errorForeground); font-weight: 600; }
+
+/* ===== Trạng thái rỗng ===== */
+.sb-empty { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 24px 12px 8px; text-align: center; }
+.sb-empty .es-ic { opacity: .7; margin-bottom: 4px; }
+.sb-empty .es-t { font-weight: 600; }
+.sb-empty .es-d { max-width: 260px; font-size: 12px; line-height: 18px; color: var(--vscode-descriptionForeground); }
+.sb-empty .btns { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; padding: 8px 4px; }
+.sb-empty .btn { height: 26px; padding: 0 10px; border: 1px solid var(--vscode-button-border, var(--bd)); }
+.sb-empty .btn.primary { border-color: transparent; background: var(--vscode-button-background); color: var(--vscode-button-foreground); }
+.sb-empty .btn.primary:hover { background: var(--vscode-button-hoverBackground); }
+
+/* ===== Hộp lịch sử thả xuống (historyDrop) theo màu menu của IDE ===== */
+.sb .hist-drop { background: var(--vscode-menu-background, var(--vscode-dropdown-background)); color: var(--vscode-menu-foreground, var(--vscode-foreground)); border-color: var(--vscode-menu-border, var(--bd)); }
+.sb .hd-row:hover, .sb .hd-row.on { background: var(--vscode-menu-selectionBackground, var(--hov)); color: var(--vscode-menu-selectionForeground, inherit); }

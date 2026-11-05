@@ -1,0 +1,14 @@
+src/**
+test/**
+out/**
+out-test/**
+node_modules/**
+tsconfig*.json
+esbuild.mjs
+**/*.map
+scripts/**
+.gitignore
+*.vsix
+package-lock.json
+# web/ (giao diện màn webview + Monaco) chạy thẳng từ extension, không đóng gói lại: phải nằm trong .vsix
+!web/**

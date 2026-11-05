@@ -1,0 +1,65 @@
+/* Nền chung của mọi màn webview (phần dùng lại từ shell.css của 5.2, bỏ phần vỏ: titlebar, activity, sidebar, tab của vỏ).
+ * Chỉ dùng biến --vscode-* qua theme.css. Thang khoảng cách 4 / 8 / 12px, bo 4px (menu nổi / hộp thoại 6px), chữ 13px. */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; }
+body { background: var(--bg); color: var(--fg); font: var(--font-size) / 1.5 var(--font); -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+button { font: inherit; color: inherit; }
+.mono { font-family: var(--mono); }
+.muted { color: var(--muted); }
+.faint { color: var(--faint); }
+kbd { font: 11px/1.4 var(--mono); border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 3px; padding: 0 4px; color: var(--muted); }
+a { color: var(--link); }
+:focus-visible { outline: 1px solid var(--focus); outline-offset: -1px; }
+
+/* Icon SVG nội tuyến (ui/icons.js): icon nét theo màu chữ; icon màu (cicon) tự mang màu của chức năng. Không co. */
+.ic { flex: none; vertical-align: -3px; }
+
+.ci-green { color: var(--ic-green); } .ci-red { color: var(--ic-red); } .ci-blue { color: var(--ic-blue); } .ci-yellow { color: var(--ic-yellow); }
+.ci-orange { color: var(--ic-orange); } .ci-purple { color: var(--ic-purple); } .ci-cyan { color: var(--ic-cyan); } .ci-pink { color: var(--ic-pink); }
+/* Icon màu trong nút bị khóa: mờ đi cùng nút. */
+:disabled > .ic, [disabled] > .ic { opacity: .45; filter: saturate(.4); }
+
+/* Thông tin quan trọng: đậm / tô màu theo ý nghĩa; phụ thì mờ (.muted / .faint). */
+.t-strong { font-weight: 600; color: var(--fg); }
+.t-name { font-weight: 700; color: var(--fg); }
+.t-ok { color: var(--ok); }
+.t-warn { color: var(--warn); }
+.t-bad { color: var(--bad); }
+.t-key { color: var(--c-js); }
+.t-num { font-weight: 600; font-variant-numeric: tabular-nums; color: var(--fg); }
+
+/* Khung màn: #root giãn hết cửa sổ, mỗi màn tự bố cục bên trong. */
+#root { display: flex; flex-direction: column; height: 100vh; min-width: 0; }
+.empty { padding: 16px; color: var(--muted); }
+
+/* Icon loại: ô màu có chữ */
+.fi { display: inline-grid; place-items: center; width: 18px; height: 16px; border-radius: 3px; font: 700 8.5px/1 var(--font); color: #fff; flex: none; letter-spacing: -.02em; }
+.fi.tbl { background: var(--c-tbl); } .fi.sql { background: var(--c-sql); }
+
+/* Menu nổi (dialog.js menuAt) */
+.ctx { position: fixed; background: var(--vscode-menu-background, var(--side)); color: var(--vscode-menu-foreground, var(--fg)); border: 1px solid var(--vscode-menu-border, var(--line)); border-radius: 6px; box-shadow: var(--shadow); padding: 4px; min-width: 240px; z-index: 60; display: none; animation: pop var(--dur) ease-out; }
+.ctx .mi { display: flex; align-items: center; gap: 16px; height: 24px; padding: 0 12px; border-radius: 4px; cursor: pointer; white-space: nowrap; }
+.ctx .mi:hover { background: var(--vscode-menu-selectionBackground, var(--sel)); color: var(--vscode-menu-selectionForeground, var(--sel-fg)); }
+.ctx .mi .k { margin-left: auto; display: inline-flex; align-items: center; color: var(--faint); font-size: 11px; }
+.ctx .mi:hover .k { color: inherit; }
+.ctx .ms { height: 1px; background: var(--vscode-menu-separatorBackground, var(--line)); margin: 4px 8px; }
+.ctx .mi.off { color: var(--faint); cursor: default; }
+.ctx .mi.off:hover { background: none; color: var(--faint); }
+
+/* Hộp gợi ý / danh sách chọn (st-sugg) */
+.pi { display: flex; align-items: center; gap: 8px; height: 24px; padding: 0 12px; cursor: pointer; }
+.pi.on { background: var(--sel); color: var(--sel-fg); }
+
+/* Thanh cuộn mảnh theo theme IDE */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--vscode-scrollbarSlider-background, color-mix(in srgb, var(--fg) 30%, transparent)); border: 2px solid transparent; background-clip: padding-box; border-radius: 5px; }
+::-webkit-scrollbar-thumb:hover { background: var(--vscode-scrollbarSlider-hoverBackground, color-mix(in srgb, var(--fg) 45%, transparent)); background-clip: padding-box; }
+::-webkit-scrollbar-thumb:active { background: var(--vscode-scrollbarSlider-activeBackground, color-mix(in srgb, var(--fg) 55%, transparent)); background-clip: padding-box; }
+::-webkit-scrollbar-corner { background: transparent; }
+
+@keyframes pop { from { opacity: 0; transform: translateY(-3px) scale(.985); } to { opacity: 1; transform: none; } }
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}

@@ -1,0 +1,381 @@
+{
+  "name": "fsd-menu",
+  "displayName": "FSD Menu",
+  "description": "Menu FBO / Mobile của file đang mở: menu nào dùng file này, menu gồm những file / bảng / store nào (dò theo sysid như FSD Studio).",
+  "version": "0.1.0",
+  "publisher": "fsd-local",
+  "private": true,
+  "license": "UNLICENSED",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "main": "./dist/extension.js",
+  "activationEvents": [
+    "onStartupFinished",
+    "onWebviewPanel:fsd.screen"
+  ],
+  "contributes": {
+    "views": {
+      "explorer": [
+        {
+          "type": "webview",
+          "id": "fsd.menu",
+          "name": "Menu",
+          "visibility": "visible"
+        },
+        {
+          "type": "webview",
+          "id": "fsd.screenTree",
+          "name": "Cây màn",
+          "visibility": "visible"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "fsd.findMenu",
+        "title": "Tìm menu",
+        "category": "FSD",
+        "icon": "$(search)"
+      },
+      {
+        "command": "fsd.openAllOfMenu",
+        "title": "Mở các file của menu",
+        "category": "FSD",
+        "icon": "$(folder-opened)"
+      },
+      {
+        "command": "fsd.copyAiContext",
+        "title": "Copy menu cho AI",
+        "category": "FSD",
+        "icon": "$(copy)"
+      },
+      {
+        "command": "fsd.importProjects",
+        "title": "Nhập dự án",
+        "category": "FSD"
+      },
+      {
+        "command": "fsd.syncProjects",
+        "title": "Đồng bộ dự án",
+        "category": "FSD"
+      },
+      {
+        "command": "fsd.rebuildIndex",
+        "title": "Quét lại menu",
+        "category": "FSD",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "fsd.focusMenuOfFile",
+        "title": "Menu của file này",
+        "category": "FSD"
+      },
+      {
+        "command": "fsd.enterKey",
+        "title": "Cài đặt key",
+        "category": "FSD"
+      },
+      {
+        "command": "fsd.copyMachineCode",
+        "title": "Copy mã máy",
+        "category": "FSD"
+      },
+      {
+        "command": "fsd.changeProject",
+        "title": "Đổi dự án",
+        "category": "FSD",
+        "icon": "$(arrow-swap)"
+      },
+      {
+        "command": "fsd.closeProject",
+        "title": "Đóng dự án",
+        "category": "FSD"
+      },
+      {
+        "command": "fsd.openQuery",
+        "title": "Query",
+        "category": "FSD",
+        "icon": "$(database)"
+      },
+      {
+        "command": "fsd.selectTable",
+        "title": "Select Table",
+        "category": "FSD",
+        "icon": "$(table)"
+      },
+      {
+        "command": "fsd.openUpdateScript",
+        "title": "Update Script",
+        "category": "FSD",
+        "icon": "$(package)"
+      },
+      {
+        "command": "fsd.openMultiSearch",
+        "title": "Multi Search",
+        "category": "FSD",
+        "icon": "$(search)"
+      },
+      {
+        "command": "fsd.openMenuEdit",
+        "title": "Sửa menu",
+        "category": "FSD",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "fsd.viewMemory",
+        "title": "Xem Memory Temp",
+        "category": "FSD"
+      },
+      {
+        "command": "fsd.basketView",
+        "title": "Danh sách Update",
+        "category": "FSD"
+      },
+      {
+        "command": "fsd.basketCopy",
+        "title": "Copy danh sách Update",
+        "category": "FSD"
+      },
+      {
+        "command": "fsd.basketClear",
+        "title": "Xóa danh sách Update",
+        "category": "FSD"
+      },
+      {
+        "command": "fsd.clearRecent",
+        "title": "Xóa gần đây",
+        "category": "FSD",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "fsd.screenDemo",
+        "title": "Demo màn webview",
+        "category": "FSD"
+      },
+      {
+        "command": "fsd.pickSqlObject",
+        "title": "Đối tượng SQL…",
+        "category": "FSD",
+        "icon": "$(database)"
+      },
+      {
+        "command": "fsd.openWebConfig",
+        "title": "Mở Web.config",
+        "category": "FSD",
+        "icon": "$(settings-gear)"
+      },
+      {
+        "command": "fsd.openControllers",
+        "title": "Mở thư mục nguồn (Controllers)",
+        "category": "FSD",
+        "icon": "$(folder-opened)"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "fsd.changeProject",
+          "when": "view == fsd.menu && fsd.licensed",
+          "group": "navigation@1"
+        },
+        {
+          "command": "fsd.rebuildIndex",
+          "when": "view == fsd.menu && fsd.licensed && fsd.hasProject",
+          "group": "navigation@2"
+        },
+        {
+          "command": "fsd.closeProject",
+          "when": "view == fsd.menu && fsd.licensed && fsd.hasProject",
+          "group": "1_project@1"
+        },
+        {
+          "command": "fsd.syncProjects",
+          "when": "view == fsd.menu && fsd.licensed",
+          "group": "1_project@2"
+        },
+        {
+          "command": "fsd.importProjects",
+          "when": "view == fsd.menu && fsd.licensed",
+          "group": "1_project@3"
+        },
+        {
+          "command": "fsd.enterKey",
+          "when": "view == fsd.menu",
+          "group": "2_key@1"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "fsd.copyMachineCode",
+          "when": "false"
+        },
+        {
+          "command": "fsd.screenDemo",
+          "when": "false"
+        },
+        {
+          "command": "fsd.openUpdateScript",
+          "when": "fsd.licensed && fsd.hasProject"
+        },
+        {
+          "command": "fsd.openMultiSearch",
+          "when": "fsd.licensed && fsd.hasProject"
+        },
+        {
+          "command": "fsd.openMenuEdit",
+          "when": "fsd.licensed && fsd.hasProject"
+        },
+        {
+          "command": "fsd.clearRecent",
+          "when": "fsd.licensed"
+        },
+        {
+          "command": "fsd.pickSqlObject",
+          "when": "fsd.licensed && fsd.hasProject"
+        },
+        {
+          "command": "fsd.openWebConfig",
+          "when": "fsd.licensed && fsd.hasProject"
+        },
+        {
+          "command": "fsd.openControllers",
+          "when": "fsd.licensed && fsd.hasProject"
+        }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "fsd.openMultiSearch",
+        "key": "ctrl+alt+f",
+        "when": "!terminalFocus && fsd.licensed && fsd.hasProject"
+      },
+      {
+        "command": "fsd.pickSqlObject",
+        "key": "ctrl+alt+o",
+        "when": "!terminalFocus && fsd.licensed && fsd.hasProject"
+      },
+      {
+        "command": "fsd.findMenu",
+        "key": "ctrl+alt+p",
+        "when": "!terminalFocus"
+      },
+      {
+        "command": "fsd.focusMenuOfFile",
+        "key": "ctrl+alt+m",
+        "when": "!terminalFocus"
+      }
+    ],
+    "configuration": {
+      "title": "FSD Menu",
+      "properties": {
+        "fsd.licenseKey": {
+          "type": "string",
+          "default": "",
+          "order": 1,
+          "scope": "application",
+          "description": "Key dùng FSD Menu (cùng key FSD Studio). Dán key được cấp vào đây."
+        },
+        "fsd.machineId": {
+          "type": "string",
+          "default": "",
+          "order": 2,
+          "scope": "application",
+          "description": "Mã máy — copy gửi để được cấp key. Extension tự điền."
+        },
+        "fsd.studioDir": {
+          "type": "string",
+          "default": "D:\\SOFT\\FSDStudio",
+          "description": "Thư mục FSD Studio: nơi đọc key.txt và config.db mặc định."
+        },
+        "fsd.configDbPath": {
+          "type": "string",
+          "default": "",
+          "description": "config.db của FSD Studio — chỉ đọc bảng dmda để lấy danh sách dự án. Trống = <fsd.studioDir>\\config.db."
+        },
+        "fsd.fKeyFile": {
+          "type": "string",
+          "default": "",
+          "description": "File khóa giải vùng mã hóa trong .f (mỗi dòng key_hex|iv_hex). Trống = %USERPROFILE%\\convert_keys.txt. Không có khóa thì đọc .xml."
+        },
+        "fsd.menuButtons": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "openAll",
+              "web2",
+              "search",
+              "update",
+              "script",
+              "ai"
+            ],
+            "enumDescriptions": [
+              "Mở tất cả file của menu",
+              "Mở trang web của menu ở web host 2",
+              "Tìm file của menu (Multi Search điền sẵn menu)",
+              "Update của menu (Update Script điền sẵn menu)",
+              "Xem script menu (DELETE + INSERT dòng menu)",
+              "Copy menu cho AI"
+            ]
+          },
+          "default": [
+            "openAll",
+            "web2",
+            "search",
+            "update",
+            "script"
+          ],
+          "uniqueItems": true,
+          "description": "Nút để sẵn trên thẻ menu, theo thứ tự (chỉ icon, chữ nằm trong tooltip). Tìm file / Update của menu luôn hiện. Nút bỏ ra vẫn còn trong menu ⋯ của thẻ. Web.config và thư mục nguồn nằm ở khối Công cụ."
+        },
+        "fsd.codeLens": {
+          "type": "boolean",
+          "default": true,
+          "description": "Hiện tên menu ở dòng đầu file controller."
+        },
+        "fsd.openAllRoles": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "dir",
+            "grid",
+            "filter"
+          ],
+          "description": "Loại file mở khi bấm \"Mở cả menu\" (dir, grid, filter, report, dashboard, lookup, import, template, include)."
+        },
+        "fsd.statusBar": {
+          "type": "boolean",
+          "default": false,
+          "description": "Hiện mã menu của file đang mở trên thanh trạng thái."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "node esbuild.mjs",
+    "watch": "node esbuild.mjs --watch",
+    "typecheck": "tsc --noEmit -p .",
+    "pretest": "tsc -p tsconfig.test.json",
+    "test": "node --test \"out-test/test/**/*.test.js\"",
+    "package": "npm run build && vsce package --no-dependencies"
+  },
+  "dependencies": {
+    "exceljs": "^4.4.0",
+    "sql.js": "^1.12.0",
+    "tedious": "^18.6.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.43",
+    "@types/sql.js": "^1.4.9",
+    "@types/vscode": "^1.90.0",
+    "@vscode/vsce": "^3.2.1",
+    "esbuild": "^0.24.0",
+    "typescript": "^5.6.3"
+  }
+}

@@ -1,0 +1,141 @@
+/*
+ * Panel "Đối tượng SQL" (WebviewView) — chỉ dùng biến --vscode-* qua theme.css (theo theme sáng / tối / tương phản cao của IDE).
+ * Nền chung: theme.css + base.css. Chữ 13px, khoảng cách bậc 4 / 8 / 12, bo góc 4px, dòng danh sách cao 22px như Explorer.
+ * Icon loại là ô nhãn TB / VW / SP / FN / TR tô màu --c-* (định nghĩa .fi ở base.css).
+ */
+body.sqlo {
+  background: transparent;
+  color: var(--vscode-foreground);
+  font: 13px / 22px var(--vscode-font-family);
+  --bg-flt: color-mix(in srgb, var(--vscode-foreground) 3%, var(--vscode-sideBar-background, transparent));
+  --bg-bar: color-mix(in srgb, var(--vscode-foreground) 5%, var(--vscode-sideBar-background, transparent));
+  --bg-chip: color-mix(in srgb, var(--vscode-foreground) 10%, transparent);
+  --bd: var(--vscode-panel-border, rgba(128, 128, 128, 0.35));
+  --bd-soft: color-mix(in srgb, var(--vscode-foreground) 10%, transparent);
+  --hov: var(--vscode-toolbar-hoverBackground, var(--vscode-list-hoverBackground, rgba(128, 128, 128, 0.2)));
+}
+body.sqlo #app, body.sqlo #main { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+body.sqlo button, body.sqlo input, body.sqlo select { font: inherit; color: inherit; }
+body.sqlo svg { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.2; stroke-linecap: round; stroke-linejoin: round; display: block; }
+body.sqlo ::-webkit-scrollbar { width: 8px; height: 8px; }
+body.sqlo ::-webkit-scrollbar-thumb { border-radius: 4px; }
+
+.grow { flex: 1; min-width: 0; }
+.ell { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dim { color: var(--vscode-descriptionForeground); }
+[hidden] { display: none !important; }
+.fi.js { background: var(--c-js); }
+
+/* ===== Ô lọc ===== */
+.flt { display: flex; align-items: center; gap: 4px; padding: 8px 12px; background: var(--bg-flt); border-bottom: 1px solid var(--bd); flex: none; }
+.flt input {
+  flex: 1; min-width: 0; height: 24px; padding: 0 8px; outline: none; border-radius: 4px;
+  background: var(--vscode-input-background); color: var(--vscode-input-foreground); border: 1px solid var(--vscode-input-border, transparent);
+}
+.flt input:focus { border-color: var(--vscode-focusBorder); }
+.flt input::placeholder { color: var(--vscode-input-placeholderForeground); }
+/* Nút icon vuông cố định 24×24 (sắp xếp, ⋯, bỏ lọc): không đổi bề rộng theo trạng thái nên hàng không nhảy. */
+.ibtn { flex: none; display: inline-grid; place-items: center; width: 24px; height: 24px; padding: 0; border: 1px solid transparent; border-radius: 4px; background: transparent; cursor: pointer; color: var(--vscode-icon-foreground, var(--vscode-foreground)); }
+.ibtn:hover:not(:disabled) { background: var(--hov); }
+.ibtn:focus-visible { outline: 1px solid var(--vscode-focusBorder); outline-offset: -1px; }
+.ibtn:disabled { opacity: 0.35; cursor: default; }
+.ibtn.sm { width: 20px; height: 20px; }
+.ibtn.sm svg { width: 12px; height: 12px; }
+
+/* ===== Loại đối tượng: một hàng, panel hẹp thì cuộn ngang (con lăn cũng cuộn) ===== */
+.types { display: flex; flex-wrap: nowrap; align-items: center; gap: 4px; height: 36px; padding: 0 12px; border-bottom: 1px solid var(--bd); flex: none; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; }
+.types::-webkit-scrollbar { display: none; }
+.types button {
+  flex: none; height: 22px; padding: 0 8px; border: 1px solid var(--bd-soft); border-radius: 4px; background: transparent; cursor: pointer; white-space: nowrap;
+  transition: background 120ms;
+}
+.types button:hover { background: var(--hov); }
+.types button.on { background: var(--vscode-button-background, #0e639c); color: var(--vscode-button-foreground, #fff); border-color: transparent; }
+.types button.on:hover { background: var(--vscode-button-hoverBackground, #1177bb); }
+.types button:focus-visible { outline: 1px solid var(--vscode-focusBorder); outline-offset: -1px; }
+
+/* Chip "Đang lọc: đã sửa …  ✕" */
+.chip { display: flex; align-items: center; gap: 4px; height: 28px; padding: 0 8px 0 12px; border-bottom: 1px solid var(--bd); background: var(--bg-chip); flex: none; font-size: 12px; }
+.chip .ell { flex: 1; min-width: 0; }
+
+/* ===== Danh sách (cuộn ảo: #rows cao = số dòng × 22px, #win chỉ chứa các dòng trong khung nhìn) ===== */
+.list { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; outline: none; scrollbar-width: thin; }
+#rows { position: relative; }
+#win { position: absolute; left: 0; right: 0; }
+#msg .err { color: var(--vscode-errorForeground); }
+.row { display: flex; align-items: center; gap: 8px; height: 22px; padding: 0 12px; cursor: pointer; user-select: none; }
+.row:hover { background: var(--vscode-list-hoverBackground); }
+.row.sel { background: var(--vscode-list-inactiveSelectionBackground, var(--hov)); }
+.list:focus-within .row.sel, #main:focus-within .row.sel { background: var(--vscode-list-activeSelectionBackground, var(--hov)); color: var(--vscode-list-activeSelectionForeground, inherit); }
+.row .nm { flex: 1; min-width: 0; }
+.row .dt { flex: none; font-size: 11px; color: var(--vscode-descriptionForeground); }
+.row .dt.new { color: var(--new); font-weight: 600; }
+.row .dot { flex: none; width: 6px; height: 6px; border-radius: 50%; background: var(--new); }
+.empty { padding: 8px 12px; color: var(--vscode-descriptionForeground); }
+.empty.err { color: var(--vscode-errorForeground); }
+
+/* ===== Thanh trạng thái: ⛁ <DB> ===== */
+.status { display: flex; align-items: center; gap: 4px; height: 26px; padding: 0 12px; flex: none; border-top: 1px solid var(--bd); background: var(--bg-bar); font-size: 12px; }
+.status .dbic { color: var(--vscode-descriptionForeground); display: inline-grid; }
+.status .dbic svg { width: 14px; height: 14px; }
+.status #count { flex: none; margin-left: auto; padding-left: 4px; white-space: nowrap; }
+.status select {
+  flex: 0 1 auto; min-width: 48px; max-width: 70%; height: 20px; padding: 0 4px; border-radius: 4px; cursor: pointer; text-overflow: ellipsis;
+  background: var(--vscode-dropdown-background, var(--vscode-input-background)); color: var(--vscode-dropdown-foreground, inherit); border: 1px solid var(--vscode-dropdown-border, transparent);
+}
+.status select:focus { outline: 1px solid var(--vscode-focusBorder); outline-offset: -1px; }
+
+/* ===== Trạng thái rỗng (chưa key / chưa mở dự án) ===== */
+.es { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 24px 12px 8px; text-align: center; }
+.es-ic { color: var(--vscode-descriptionForeground); opacity: 0.45; margin-bottom: 4px; }
+.es-ic svg { width: 40px; height: 40px; stroke-width: 0.9; }
+.es-t { font-weight: 600; }
+.es-d { max-width: 280px; font-size: 12px; line-height: 18px; color: var(--vscode-descriptionForeground); }
+.btns { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; padding: 8px 12px; }
+.btn {
+  display: inline-flex; align-items: center; gap: 4px; height: 26px; padding: 0 12px; border-radius: 4px; cursor: pointer; white-space: nowrap;
+  border: 1px solid var(--bd-soft); background: transparent; transition: background 120ms;
+}
+.btn:hover { background: var(--hov); }
+.btn.primary { border-color: transparent; background: var(--vscode-button-background); color: var(--vscode-button-foreground); }
+.btn.primary:hover { background: var(--vscode-button-hoverBackground); }
+.btn:focus-visible { outline: 1px solid var(--vscode-focusBorder); outline-offset: -1px; }
+
+/* ===== Menu chuột phải ===== */
+.pop {
+  position: fixed; z-index: 50; min-width: 200px; max-width: calc(100vw - 8px); padding: 4px 0; border-radius: 4px;
+  background: var(--vscode-menu-background, var(--vscode-dropdown-background)); color: var(--vscode-menu-foreground, var(--vscode-foreground));
+  border: 1px solid var(--vscode-menu-border, var(--vscode-panel-border)); box-shadow: 0 2px 8px var(--vscode-widget-shadow, rgba(0, 0, 0, 0.3));
+}
+.pop .it { display: flex; align-items: center; justify-content: space-between; gap: 16px; height: 22px; padding: 0 12px; cursor: pointer; white-space: nowrap; }
+.pop .it .k { flex: none; font-size: 11px; opacity: 0.7; }
+.pop .it.off { opacity: 0.45; cursor: default; }
+.pop .it.off:hover { background: transparent; color: inherit; }
+.pop .it:hover { background: var(--vscode-menu-selectionBackground, var(--vscode-list-hoverBackground)); color: var(--vscode-menu-selectionForeground, inherit); }
+.pop .sep { height: 1px; margin: 4px 0; background: var(--vscode-menu-separatorBackground, var(--vscode-panel-border)); }
+
+/* ===== Hộp thoại nhỏ (ngày, Custom Gen, thêm danh sách) ===== */
+.mdl-back { position: fixed; inset: 0; z-index: 60; display: flex; align-items: flex-start; justify-content: center; padding: 24px 8px; background: rgba(0, 0, 0, 0.35); }
+.mdl {
+  width: 100%; max-width: 420px; max-height: calc(100vh - 48px); display: flex; flex-direction: column; border-radius: 6px; overflow: hidden;
+  background: var(--vscode-editorWidget-background, var(--vscode-sideBar-background)); color: var(--vscode-foreground);
+  border: 1px solid var(--vscode-editorWidget-border, var(--vscode-panel-border)); box-shadow: 0 4px 16px var(--vscode-widget-shadow, rgba(0, 0, 0, 0.4));
+}
+.mdl-t { padding: 8px 12px; font-weight: 600; border-bottom: 1px solid var(--bd); }
+.mdl-b { display: flex; flex-direction: column; gap: 8px; padding: 12px; overflow: auto; }
+.mdl-b label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; line-height: 18px; color: var(--vscode-descriptionForeground); }
+.mdl-b input[type="date"], .mdl-b select, .mdl-b textarea {
+  width: 100%; box-sizing: border-box; padding: 2px 8px; border-radius: 4px; outline: none; font: inherit; color: var(--vscode-input-foreground);
+  background: var(--vscode-input-background); border: 1px solid var(--vscode-input-border, transparent);
+}
+.mdl-b input[type="date"], .mdl-b select { height: 26px; }
+.mdl-b textarea { min-height: 120px; resize: vertical; font-family: var(--vscode-editor-font-family, monospace); line-height: 18px; }
+.mdl-b input:focus, .mdl-b select:focus, .mdl-b textarea:focus { border-color: var(--vscode-focusBorder); }
+.mdl-b .radios { display: flex; flex-wrap: wrap; gap: 4px 16px; }
+.mdl-b .radios label { flex-direction: row; align-items: center; gap: 4px; color: var(--vscode-foreground); }
+.mdl-f { display: flex; align-items: center; justify-content: flex-end; gap: 8px; padding: 8px 12px; border-top: 1px solid var(--bd); }
+.mdl-err { flex: 1; min-width: 0; font-size: 12px; color: var(--vscode-errorForeground); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; }
+}

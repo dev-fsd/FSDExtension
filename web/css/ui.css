@@ -1,0 +1,154 @@
+/*
+ * Quy ước giao diện chung của các màn webview (Query, Select Table, hộp thoại) — không tự đặt riêng từng màn:
+ *   Khoảng cách: --sp-1..5 (4 / 8 / 12 / 16 / 24). Cỡ điều khiển: ô nhập / nút cao 28 (--ctl-h), nút nhỏ 22 (--ctl-h-sm). Bo góc 4px (--r); hộp thoại / menu 6px (--r-lg).
+ *   Màu: chỉ biến --vscode-* qua theme.css (sáng / tối / tương phản cao). Nút chính (nền button-background) mỗi vùng một cái; nút phụ trong suốt, rê chuột mới có nền.
+ *   Chữ 13px; phân cấp: chữ chính --fg, phụ --muted, mờ --faint. Phím tắt ghi trong tooltip (title) và dạng <kbd> ở nút chính.
+ *   Chuyển động ngắn 120ms (--dur), tắt khi prefers-reduced-motion (base.css).
+ */
+:root {
+  --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 24px;
+  --ctl-h: 28px; --ctl-h-sm: 22px; --r: 4px; --r-lg: 6px; --lbl-w: 96px;
+}
+
+/* ===== Điều khiển ===== */
+:where(input:not([type="checkbox"], [type="radio"]), select, textarea) {
+  font: inherit; color: var(--fg); background: var(--input); border: 1px solid var(--line-ctl); border-radius: var(--r);
+  height: var(--ctl-h); padding: 0 var(--sp-2); outline: none; min-width: 0;
+  transition: border-color var(--dur), box-shadow var(--dur);
+}
+:where(input:not([type="checkbox"], [type="radio"])) { width: 100%; }
+:where(select) { padding-right: var(--sp-1); }
+:where(textarea) { height: auto; padding: 5px var(--sp-2); resize: vertical; }
+:where(input::placeholder, textarea::placeholder) { color: var(--faint); }
+:where(input:not([type="checkbox"], [type="radio"]), select, textarea):focus { border-color: var(--focus); box-shadow: 0 0 0 1px var(--focus); }
+:where(input, select, textarea):disabled { opacity: .55; }
+:where(input[type="date"]) { color-scheme: light dark; }
+
+/* Ô tick / chấm tròn vẽ lại theo màu IDE */
+:where(input[type="checkbox"], input[type="radio"]) {
+  appearance: none; -webkit-appearance: none; width: 14px; height: 14px; margin: 0; flex: none; cursor: pointer;
+  display: inline-grid; place-content: center; background: var(--input); border: 1px solid var(--line-ctl);
+}
+:where(input[type="checkbox"]) { border-radius: 3px; }
+:where(input[type="radio"]) { border-radius: 50%; }
+:where(input[type="checkbox"], input[type="radio"]):hover { border-color: var(--focus); }
+:where(input[type="checkbox"], input[type="radio"]):checked { background: var(--accent); border-color: var(--accent); }
+:where(input[type="checkbox"])::after { content: ""; width: 8px; height: 8px; background: var(--accent-fg); clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%); transform: scale(0); transition: transform var(--dur); }
+:where(input[type="radio"])::after { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--accent-fg); transform: scale(0); transition: transform var(--dur); }
+:where(input[type="checkbox"], input[type="radio"]):checked::after { transform: scale(1); }
+:where(input[type="checkbox"], input[type="radio"]):focus-visible { outline: 1px solid var(--focus); outline-offset: 1px; }
+:where(input[type="checkbox"], input[type="radio"]):disabled { cursor: default; }
+
+.btn {
+  height: var(--ctl-h); padding: 0 10px; border: 1px solid transparent; border-radius: var(--r);
+  background: transparent; color: var(--fg); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  white-space: nowrap; flex: none; transition: background var(--dur), border-color var(--dur);
+}
+.btn:hover { background: var(--hover); }
+.btn:focus-visible, .icon-btn:focus-visible { outline: 1px solid var(--focus); outline-offset: 1px; }
+.btn.primary { background: var(--accent); color: var(--accent-fg); font-weight: 500; }
+.btn.primary:hover { background: var(--vscode-button-hoverBackground, var(--accent)); filter: brightness(1.06); }
+.btn.primary kbd { color: inherit; opacity: .75; border-color: currentColor; background: transparent; }
+.btn[disabled] { opacity: .4; cursor: default; pointer-events: none; }
+.icon-btn {
+  min-width: var(--ctl-h); height: var(--ctl-h); padding: 0 6px; border: 0; border-radius: var(--r); background: none; color: var(--muted);
+  cursor: pointer; display: inline-grid; place-items: center; white-space: nowrap; flex: none; transition: background var(--dur), color var(--dur);
+}
+.icon-btn:hover { background: var(--hover); color: var(--fg); }
+/* Nút bật / tắt đang bật: nền nhạt màu nhấn — không đặc như nút chính, để mỗi vùng chỉ một nút đặc. */
+.icon-btn.on { background: color-mix(in srgb, var(--accent) 20%, transparent); color: var(--fg); }
+.chk { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; white-space: nowrap; color: var(--muted); }
+.chk:hover { color: var(--fg); }
+
+/* Nút icon trên thanh công cụ: icon màu (cicon) + tooltip, không chữ; nút mở menu thả có mũi tên nhỏ mờ. */
+.icon-btn.tb { display: inline-flex; align-items: center; justify-content: center; gap: 2px; padding: 0 6px; }
+.icon-btn.tb > .ic:last-child:not(:first-child) { color: var(--faint); }
+.icon-btn.sm { min-width: 22px; height: 22px; padding: 0 3px; }
+/* Nút chạy: nền xanh lá nhạt + viền, đủ nổi mà không đặc như nút chính. Dừng: viền đỏ nhạt khi bấm được. */
+.icon-btn.go { border: 1px solid color-mix(in srgb, var(--ic-green) 50%, transparent); background: color-mix(in srgb, var(--ic-green) 15%, transparent); }
+.icon-btn.go:hover { background: color-mix(in srgb, var(--ic-green) 28%, transparent); }
+.icon-btn.main { border: 1px solid color-mix(in srgb, var(--ic-blue) 50%, transparent); background: color-mix(in srgb, var(--ic-blue) 15%, transparent); }
+.icon-btn.main:hover { background: color-mix(in srgb, var(--ic-blue) 28%, transparent); }
+.icon-btn.halt:not([disabled]) { border: 1px solid color-mix(in srgb, var(--ic-red) 45%, transparent); background: color-mix(in srgb, var(--ic-red) 12%, transparent); }
+.icon-btn.halt:not([disabled]):hover { background: color-mix(in srgb, var(--ic-red) 25%, transparent); }
+.icon-btn[disabled] { opacity: .5; cursor: default; pointer-events: none; }
+/* Nút bật / tắt dạng icon: <label class="icon-btn tog"><input type="checkbox">icon</label>; bật = nền nhạt màu nhấn. */
+.tog { position: relative; cursor: pointer; }
+.tog > input { position: absolute; opacity: 0; width: 0; height: 0; margin: 0; pointer-events: none; }
+.tog:has(> input:checked) { background: color-mix(in srgb, var(--tint) 20%, transparent); color: var(--fg); }
+.tog:has(> input:focus-visible) { outline: 1px solid var(--focus); outline-offset: 1px; }
+.tog:has(> input:disabled) { opacity: .5; cursor: default; }
+/* Chỉ đọc: tick = khóa xanh lá; bỏ tick = bút cam (sửa được, ghi thẳng DB). */
+.tog.ro > input:checked ~ .i-edit, .tog.ro > input:not(:checked) ~ .i-lock { display: none; }
+.tog.ro:has(> input:not(:checked)) { background: color-mix(in srgb, var(--ic-orange) 22%, transparent); }
+/* Nhãn nhỏ (chip) trong thanh trạng thái / tiêu đề: nền nhạt theo ý nghĩa. */
+.chip { display: inline-flex; align-items: center; gap: 4px; height: 18px; padding: 0 7px; border-radius: 9px; font-size: 11px; font-weight: 600; white-space: nowrap; background: color-mix(in srgb, var(--fg) 12%, transparent); color: var(--fg); }
+.chip.warn { background: color-mix(in srgb, var(--warn) 22%, transparent); color: var(--warn); }
+.chip.bad { background: color-mix(in srgb, var(--bad) 20%, transparent); color: var(--bad); }
+.chip.ok { background: color-mix(in srgb, var(--ok) 20%, transparent); color: var(--ok); }
+.chip[hidden] { display: none; }
+
+/* DB của tab: viên thuốc bấm để đổi. DB PROD tô đỏ nhẹ + nhãn PROD. */
+.db-pill {
+  display: inline-flex; align-items: center; gap: 6px; height: 24px; max-width: 280px; padding: 0 8px 0 10px; border-radius: 12px; flex: none;
+  border: 1px solid var(--line-ctl); background: var(--input); color: var(--fg); font-size: 12px; cursor: pointer;
+  transition: background var(--dur), border-color var(--dur);
+}
+.db-pill:hover { border-color: var(--focus); }
+.db-pill:focus-visible { outline: 1px solid var(--focus); outline-offset: 1px; }
+.db-pill .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.db-pill .tag-prod { display: none; font-size: 10px; font-weight: 700; letter-spacing: .05em; }
+.db-pill.prod { background: var(--prod-bg); border-color: var(--prod-line); color: var(--bad); }
+.db-pill.prod .ic { color: var(--bad); }
+.db-pill.prod .tag-prod { display: inline; }
+
+/* Ô tìm có icon kính lúp bên trái */
+.srch { position: relative; display: inline-flex; align-items: center; min-width: 0; }
+.srch > .ic { position: absolute; left: 8px; color: var(--faint); pointer-events: none; }
+.srch > input { padding-left: 28px; }
+.srch:focus-within > .ic { color: var(--muted); }
+
+/* ===== Thanh công cụ của màn + thanh tiến độ + thanh trạng thái ===== */
+.scr-bar { display: flex; align-items: center; gap: var(--sp-1); padding: var(--sp-1) var(--sp-3); min-height: 40px;
+  border-bottom: 1px solid var(--line); background: var(--panel); flex: none; flex-wrap: wrap; }
+.scr-bar .sep { width: 1px; height: 16px; background: var(--line); margin: 0 var(--sp-2); flex: none; }
+.scr-bar .sp { flex: 1; }
+.scr-prog { height: 2px; flex: none; position: relative; overflow: hidden; margin-top: -1px; pointer-events: none; }
+.is-busy .scr-prog::after { content: ""; position: absolute; top: 0; bottom: 0; left: 0; width: 30%; background: var(--focus); animation: prog 1.1s ease-in-out infinite; }
+@keyframes prog { from { transform: translateX(-100%); } to { transform: translateX(350%); } }
+@media (prefers-reduced-motion: reduce) { .is-busy .scr-prog::after { width: 100%; opacity: .5; } }
+.statusbar { flex: none; display: flex; align-items: center; gap: var(--sp-2); height: 24px; padding: 0 var(--sp-3); background: var(--head-bg);
+  border-top: 1px solid var(--line); font-size: 12px; color: var(--muted); overflow: hidden; white-space: nowrap; }
+.statusbar .sp { flex: 1; }
+.statusbar > [data-a="sinfo"] { flex: none; }
+.statusbar .dot { color: var(--faint); }
+.statusbar .sb-db { font-weight: 600; color: var(--fg); }
+.statusbar .sb-db.prod { color: var(--bad); }
+.statusbar .sb-msg { overflow: hidden; text-overflow: ellipsis; }
+.statusbar .sb-msg.ok { color: var(--ok); } .statusbar .sb-msg.warn { color: var(--warn); } .statusbar .sb-msg.bad { color: var(--bad); }
+/* DB PROD: viền đỏ nhạt; Select Table đang bỏ Chỉ đọc trên PROD (ghi thẳng DB): tô đỏ cả thanh. */
+#root:has(.db-pill.prod) .statusbar { border-top-color: var(--prod-line); }
+#root:has(.db-pill.prod):has([data-a="ro"]:not(:checked)) .statusbar { background: var(--prod-bg); color: var(--bad); border-top-width: 2px; }
+
+/* ===== Form: nhãn một cột, ô giãn hết ===== */
+.form { display: flex; flex-direction: column; gap: var(--sp-2); padding: var(--sp-3); }
+.frow { display: flex; align-items: center; gap: var(--sp-2); min-width: 0; }
+.frow > .lb { width: var(--lbl-w); flex: none; color: var(--muted); font-size: 12px; }
+.frow > .grow { flex: 1; min-width: 0; }
+
+/* ===== Hộp thoại ===== */
+.dlg-back { position: fixed; inset: 0; background: var(--scrim); backdrop-filter: blur(1px); z-index: 80; display: grid; place-items: center; animation: fade var(--dur) ease-out; }
+.dlg { background: var(--vscode-editorWidget-background, var(--bg)); color: var(--fg); border: 1px solid var(--vscode-editorWidget-border, var(--line)); border-radius: var(--r-lg); box-shadow: var(--shadow);
+  max-width: 92vw; max-height: 88vh; display: flex; flex-direction: column; animation: pop var(--dur) ease-out; }
+.dlg-title { font-weight: 600; font-size: 14px; padding: var(--sp-4) var(--sp-4) var(--sp-2); }
+.dlg-note { padding: 0 var(--sp-4) var(--sp-2); color: var(--muted); }
+.dlg-body { padding: var(--sp-2) var(--sp-4) var(--sp-3); overflow: auto; display: flex; flex-direction: column; gap: var(--sp-3); }
+.dlg-row { display: flex; flex-direction: column; gap: var(--sp-1); }
+.dlg-row > label { color: var(--muted); font-size: 12px; }
+.dlg-in { display: flex; gap: var(--sp-2); }
+.dlg-in > input, .dlg-in > select, .dlg-in > textarea { flex: 1; }
+.dlg-foot { display: flex; gap: var(--sp-2); align-items: center; padding: var(--sp-3) var(--sp-4); border-top: 1px solid var(--line); }
+.dlg-foot .btn, .dlg-in .btn { min-width: 72px; }
+.dlg .btn:not(.primary) { border-color: var(--line-ctl); }
+.dlg-err { flex: 1; color: var(--bad); font-size: 12px; }
+.dlg-pre { margin: 0 var(--sp-4); padding: var(--sp-2) var(--sp-3); background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); overflow: auto; max-height: 60vh; font-size: 12px; }

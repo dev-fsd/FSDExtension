@@ -1,0 +1,11 @@
+/* Màn Multi Search — phần xem / sửa file (thanh đường dẫn + ô tìm + editor), rộng hết cỡ. Cây File / Dữ liệu khai báo nằm ở sidebar (css/sidebar.css).
+   Màu qua biến theme.css (= --vscode-* của IDE). */
+.ms-body { flex: 1; min-height: 0; display: flex; }
+.ms-main { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; background: var(--code); }
+.ms-edit { flex: 1; min-height: 0; }
+.ms-path { min-width: 0; max-width: 60%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--fg); cursor: pointer; text-decoration: none; }
+.ms-path b { font-weight: 700; }
+.ms-path:hover b { color: var(--accent); }
+.ms-path.err { color: var(--danger); }
+.ms-dirty { color: var(--warn); }
+.ms-find { width: 220px; flex: none; }

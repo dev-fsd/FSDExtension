@@ -1,0 +1,1 @@
+SELECT RTRIM(cdata) AS val FROM entity ORDER BY code
